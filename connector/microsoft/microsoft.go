@@ -237,6 +237,7 @@ func (c *microsoftConnector) LoginURL(scopes connector.Scopes, callbackURL, stat
 }
 
 func (c *microsoftConnector) HandleCallback(s connector.Scopes, r *http.Request) (identity connector.Identity, err error) {
+	c.logger.Debug("handling callback")
 	q := r.URL.Query()
 	if errType := q.Get("error"); errType != "" {
 		return identity, &oauth2Error{errType, q.Get("error_description")}
@@ -248,6 +249,7 @@ func (c *microsoftConnector) HandleCallback(s connector.Scopes, r *http.Request)
 
 	opts := make([]oauth2.AuthCodeOption, 0, 2)
 	if c.fic != nil {
+		c.logger.Debug("obtaining client assertion")
 		// Get the client assertion
 		clientAssertion, err := c.fic.GetToken(ctx, policy.TokenRequestOptions{
 			// This is a constant value
@@ -279,6 +281,8 @@ func (c *microsoftConnector) HandleCallback(s connector.Scopes, r *http.Request)
 	if c.emailToLowercase {
 		user.Email = strings.ToLower(user.Email)
 	}
+
+	c.logger.Debug("got user", slog.F("user", user))
 
 	identity = connector.Identity{
 		UserID:        user.ID,
